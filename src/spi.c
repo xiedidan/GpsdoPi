@@ -1,10 +1,12 @@
-// TO DO : move headers to common.h
 #include "../include/common.h"
 #include <linux/spi/spidev.h>
 
 int spiSetup(char* spiDevice, uint8_t mode, uint8_t bits, uint32_t speed)
 {
   int ret = 0;
+
+  // setup GPIO
+  pinMode(COUNTER_CS, OUTPUT);
   
   if (spiDevice != NULL)
     ::spiDevice = spiDevice;
@@ -49,13 +51,23 @@ int spiSetup(char* spiDevice, uint8_t mode, uint8_t bits, uint32_t speed)
   return ret;
 }
 
-int spiReadBytes(unsigned char* buffer, int size)
+int spiTransfer(unsigned char* txBuf, unsigned char* rxBuf, int size)
 {
+  // SPI is full-duplex
+  struct spi_ioc_transfer spiTrans = {
+    .tx_buf = (unsigned long)txBuf,
+    .rx_buf = (unsigned long)rxBuf,
+    .len = size,
+    .delay_usecs = delay,
+    .speed_hz = speed,
+    .bit_per_word = bits,
+  };
 
-}
+  ret = ioctl(spi, SPI_IOC_MESSAGE(1), &spiTrans);
+  if (ret < 1)
+    spiAbout("Cannot send SPI message");
 
-int spiWriteBytes(unsigned char* buffer, int size)
-{
+  return ret;
 }
 
 void spiClose()
