@@ -1,0 +1,6 @@
+How to install
+--------------
+1. export GPIO (you may use scripts/exportGPIO.sh)
+2. configure parameters in include/common.h
+3. run 'make'
+4. run 'src/gpsdoController'

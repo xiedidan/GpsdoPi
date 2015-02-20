@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <linux/types.h>
+#include <time.h>
 
 #include <wiringPi.h>
 
@@ -30,5 +31,9 @@
 #define AD_SCLK 1
 #define AD_SDIN 2
 #define AD_nSYNC 3
+
+// AD7249 interface configs
+// AD7249 t1(min) = 200ns
+#define AD_FREQ 5000000
 
 #endif

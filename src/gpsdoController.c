@@ -7,6 +7,10 @@ bool exitFlag = false;
 
 unsigned char* txBuf;
 unsigned char* rxBuf;
+uint16_t correction;
+
+uint32_t convertFreq(unsigned char* rxBuf);
+void steerOsc(uint32_t freq);
 
 void isr(void)
 {
@@ -15,15 +19,11 @@ void isr(void)
   spiTransfer(txBuf, rxBuf, COUNTER_LEN);
   digitalWrite(COUNTER_CS, HIGH);
 
-  // TO DO : compute freq
-  uint32_t freq = ();
+  // compute freq
+  uint32_t freq = convertFreq(rxBuf);
 
-  // TO DO : compute correction
-  uint32_t diff = FREQ - freq;
-  uint16_t correction = ();
-  
-  // control DAC
-  dacWrite(correction);
+  // TO DO : steer OCXO
+  steerOsc(freq);
 }
 
 int main(void)
@@ -64,6 +64,7 @@ int main(void)
   while(!exitFlag)
   {
     // command system
+    // however, this program could never exit
   }
 
   // release resources
@@ -73,4 +74,17 @@ int main(void)
   dacClose();
 
   return 0;
+}
+
+uint32_t convertFreq(unsigned char* rxBuf)
+{
+  uint32_t freq;
+  memcpy(&freq, rxBuf, COUNTER_LEN);
+
+  return freq;
+}
+
+void steerOsc(uint32_t diff)
+{
+  // TO DO : steer
 }
