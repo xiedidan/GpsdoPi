@@ -4,13 +4,25 @@
 #include "../include/spi.h"
 
 bool exitFlag = false;
+bool steerFlag = false;
 
 unsigned char* txBuf;
 unsigned char* rxBuf;
-uint16_t correction;
+
+// calibration data
+uint32_t maxCount = 0;
+uint32_t minCount = 0;
+int calibrateTick = 0;
+
+// steer status
+int phrase = 0;
+int phraseCount = 0;
+int tickCount = 0;
+uint64_t freqCount = 0;
 
 uint32_t convertFreq(unsigned char* rxBuf);
-void steerOsc(uint32_t freq);
+void calibrate(uint32_t count);
+void steer(uint32_t freq);
 
 void isr(void)
 {
@@ -22,8 +34,16 @@ void isr(void)
   // compute freq
   uint32_t freq = convertFreq(rxBuf);
 
-  // TO DO : steer OCXO
-  steerOsc(freq);
+  if (steerFlag)
+  {
+    // steer OCXO
+    steer(freq);
+  }
+  else
+  {
+    // calibration - get steer range
+    calibrate(freq);
+  }
 }
 
 int main(void)
@@ -37,6 +57,7 @@ int main(void)
     fprintf(stderr, "Failed to setup wiringPi: %s\n", strerror(errno));
     return 1;
   }
+  pinMode(STABLE_PIN, OUTPUT);
 
   // SPI setup
   // TO DO : verify SPI mode
@@ -84,7 +105,73 @@ uint32_t convertFreq(unsigned char* rxBuf)
   return freq;
 }
 
-void steerOsc(uint32_t diff)
+void calibrate(uint32_t count)
 {
-  // TO DO : steer
+  if ((calibrateTick > 0) && (calibrateTick <= 5))
+  {
+    minCount += count;
+    if (calibrateTick == 5)
+    {
+      dacWriteBinary(AD_DAC, (uint16_t)4095);
+      minCount /= 5;
+    }
+  }
+  else if (calibrateTick < 11)
+  {
+    maxCount += count;
+    if (calibrateTick == 10)
+    {
+      maxCount /= 5;
+      steerFlag = true;
+    }
+  }
+
+  calibrateTick++;
+}
+
+void steer(uint32_t freq)
+{
+  uint64_t diff = 0;
+  uint64_t min = 0;
+  uint64_t max = 0;
+  double ratio = 0.0;
+  uint16_t correction = 0;
+
+  int count = SteerCounts[STEER_PROCESS][phrase];
+
+  if (tickCount < pow(10, phrase))
+  {
+    freqCount += freq;
+    tickCount++;
+  }
+  else
+  {
+    // steer
+    diff = FREQ * (tickCount + 1) - freqCount;
+    min = minCount * (tickCount + 1);
+    max = maxCount * (tickCount + 1);
+    if ((freqCount < minCount) || (freqCount > maxCount))
+    {
+      fprintf(stderr, "%dHz Out of steer range [%d - %d]Hz\n", freqCount, min, max);
+      return;
+    }
+
+    ratio = diff / (max - min);
+    correction = (uint16_t)(ratio * 4096);
+    dacWriteBinary(AD_DAC, correction);
+
+    phraseCount++;
+    tickCount = 0;
+  }
+
+  // stable
+  if (SteerStableFlags[STEER_PROCESS][phrase] == phraseCount)
+    digitalWrite(STABLE_PIN, STABLE_LEVEL);
+
+  // next phrase
+  if ((count != -1) && (phraseCount == count))
+  {
+    phrase++;
+    phraseCount = 0;
+  }
 }
