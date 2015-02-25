@@ -1,3 +1,12 @@
+V0.0.5
+------
+2015.02.25
+Implementation:
+1. ad7249 test - AD7249 library is working
+
+Bugfix:
+1. ad7249 library endian problem
+
 V0.0.4
 ------
 2015.02.21

@@ -37,6 +37,7 @@ int dacClose()
 
 int dacWriteBinary(int dacNo, uint16_t binary)
 {
+  int i, j;
   struct timespec cycleTime1, cycleTime2;
   struct timespec holdTime1, holdTime2;
 
@@ -47,9 +48,11 @@ int dacWriteBinary(int dacNo, uint16_t binary)
 
   // select dac
   if (dacNo == 1)
-    binary |= 0 << DAC_BITS;
+    binary &= ~(1 << DAC_BITS);
   else // dacNo == 2
-    binary |= 1 << DAC_BITS;
+    binary |= 40970;
+    // we don't use dac 2 for now, so use this as a test
+    // you should see 1010000000001010 on your logic analyzer
 
   // 1. set nSYNC
   digitalWrite(AD_nSYNC, LOW);
@@ -57,13 +60,16 @@ int dacWriteBinary(int dacNo, uint16_t binary)
     return -1;
 
   // 2. write 16-bit word
-  for (int i=0; i<DAC_BITS; i++)
+  for (j=0; j<sizeof(uint16_t) * 8; j++)
   {
+    i = sizeof(uint16_t) * 8 - j - 1;
+
     digitalWrite(AD_SCLK, HIGH);
     
     // setup SDIN
-    // MSB first?
-    if (binary & (1 << (DAC_BITS - 1 - i)))
+    // MSB first - x86 and ARM CPUs are usually little endian
+    // attention should be paid, if we port this program to Arduino
+    if (binary & (1 << i))
       digitalWrite(AD_SDIN, HIGH);
     else // 0
       digitalWrite(AD_SDIN, LOW);

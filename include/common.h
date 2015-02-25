@@ -16,7 +16,7 @@
 #include <wiringPi.h>
 
 // target frequency 
-#define FREQ 10000000
+#define FREQ 10000000L
 
 // counter pins
 #define COUNTER_CS 5
@@ -29,9 +29,9 @@
 #define SPI_MODE SPI_CPHA | SPI_CPOL | SPI_LSB_FIRST | SPI_NO_CS | SPI_READY
 
 // AD7249 pins
-#define AD_SCLK 1
-#define AD_SDIN 2
-#define AD_nSYNC 3
+#define AD_SCLK 22
+#define AD_SDIN 23
+#define AD_nSYNC 21
 
 // AD7249 interface configs
 // AD7249 t1(min) = 200ns
@@ -48,12 +48,12 @@
 #define STABLE_PIN 4
 #define STABLE_LEVEL LOW
 
-const int SteerCounts[2, 4] = {
+const int SteerCounts[2][4] = {
   {10, 5, 6, -1},
   {0, 6, 6, -1}
 };
 
-const int SteerStableFlags[2, 4] = {
+const int SteerStableFlags[2][4] = {
   {-1, 5, -1, -1},
   {-1, -1, -1, 1}
 };
