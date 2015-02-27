@@ -11,22 +11,25 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <linux/types.h>
+#include <linux/spi/spidev.h>
 #include <time.h>
 
 #include <wiringPi.h>
 
 // target frequency 
 #define FREQ 10000000L
+#define CHECK_RANGE 0.05f // +-5%
 
 // counter pins
-#define COUNTER_CS 5
-#define COUNTER_READY 6
+#define COUNTER_nRST 29
+#define COUNTER_CS 27
+#define COUNTER_READY 28
 #define COUNTER_LEN 4
 
 // SPI configs
-#define SPI_FREQ 5000000
+#define SPI_FREQ 5000
 #define SPI_DEV "/dev/spidev0.0"
-#define SPI_MODE SPI_CPHA | SPI_CPOL | SPI_LSB_FIRST | SPI_NO_CS | SPI_READY
+#define SPI_MODE SPI_CPHA | SPI_CPOL
 
 // AD7249 pins
 #define AD_SCLK 22
@@ -57,5 +60,7 @@ const int SteerStableFlags[2][4] = {
   {-1, 5, -1, -1},
   {-1, -1, -1, 1}
 };
+
+#define REVERSE(x) (((x&0xff)<<24)|((x&0xff00)<<8)|((x&0xff0000)>>8)|((x&0xff000000)>>24))
 
 #endif

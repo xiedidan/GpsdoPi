@@ -11,11 +11,14 @@ int main(void)
   wiringPiSetup();
 
   dacSetup();
+  /*
   for (i=0; i<4096; i++)
   {
     dacWriteBinary(1, i);
     nanosleep(&time1, &time2);
   }
+  */
+  dacWriteBinary(1, 200);
   // dacClose();
 
   return 0;

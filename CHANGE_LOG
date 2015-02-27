@@ -1,11 +1,22 @@
+V0.0.6
+------
+2015.02.27
+Implementation:
+1. counter test - SPI library is working
+
+Enhancement:
+1. counter nRST pin control
+2. freq checker - filter (wrong) freq readings
+3. skipFlag - skip freq reading right after operation (steer, calibration..)
+
 V0.0.5
 ------
 2015.02.25
 Implementation:
-1. ad7249 test - AD7249 library is working
+1. AD7249 test - AD7249 library is working
 
 Bugfix:
-1. ad7249 library endian problem
+1. AD7249 library endian problem
 
 V0.0.4
 ------

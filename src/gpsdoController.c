@@ -5,6 +5,7 @@
 
 bool exitFlag = false;
 bool steerFlag = false;
+bool skipFlag = false;
 
 unsigned char* txBuf;
 unsigned char* rxBuf;
@@ -26,6 +27,13 @@ void steer(uint32_t freq);
 
 void isr(void)
 {
+  // skip the reading right after adjustment (steer, calibration..)
+  if (skipFlag)
+  {
+    skipFlag = false;
+    return;
+  }
+
   // read 4 bytes from SPI
   digitalWrite(COUNTER_CS, LOW);
   spiTransfer(txBuf, rxBuf, COUNTER_LEN);
@@ -33,6 +41,8 @@ void isr(void)
 
   // compute freq
   uint32_t freq = convertFreq(rxBuf);
+  if (!checkFreq(freq))
+    return;
 
   if (steerFlag)
   {
@@ -58,9 +68,12 @@ int main(void)
     return 1;
   }
   pinMode(STABLE_PIN, OUTPUT);
+  pinMode(COUNTER_nRST, OUTPUT);
+  digitalWrite(COUNTER_nRST, HIGH);
+  digitalWrite(COUNTER_nRST, LOW);
+  digitalWrite(COUNTER_nRST, HIGH);
 
   // SPI setup
-  // TO DO : verify SPI mode
   // FreqCounter SCLK Fmax > 100MHz
   if (spiSetup(SPI_DEV, SPI_MODE, 8, SPI_FREQ) < 0)
   {
@@ -101,6 +114,7 @@ uint32_t convertFreq(unsigned char* rxBuf)
 {
   uint32_t freq;
   memcpy(&freq, rxBuf, COUNTER_LEN);
+  REVERSE(freq);
 
   return freq;
 }
@@ -114,6 +128,8 @@ void calibrate(uint32_t count)
     {
       dacWriteBinary(AD_DAC, (uint16_t)4095);
       minCount /= 5;
+
+      skipFlag = true;
     }
   }
   else if (calibrateTick < 11)
@@ -123,6 +139,8 @@ void calibrate(uint32_t count)
     {
       maxCount /= 5;
       steerFlag = true;
+
+      skipFlag = true;
     }
   }
 
@@ -147,6 +165,8 @@ void steer(uint32_t freq)
   else
   {
     // steer
+    skipFlag = true;
+
     diff = FREQ * (tickCount + 1) - freqCount;
     min = minCount * (tickCount + 1);
     max = maxCount * (tickCount + 1);
@@ -174,4 +194,12 @@ void steer(uint32_t freq)
     phrase++;
     phraseCount = 0;
   }
+}
+
+bool checkFreq(uint32_t freq)
+{
+  if (FREQ * (1 + CHECK_RANGE) < freq || FREQ * (1 - CHECK_RANGE) > freq)
+    return false;
+  else
+    return true;
 }
